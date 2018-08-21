@@ -9,12 +9,14 @@
     {
         protected $m_underlyingStream;
         protected $m_isClosed;
+        protected $m_keepAlive;
 
         protected $m_hostname;
         protected $m_username;
         protected $m_password;
         protected $m_port;
         protected $m_mailbox;
+        protected $m_type;
 
         private static $m_defaultPorts;
 
@@ -27,21 +29,22 @@
          * @param String $a_mailbox The mailbox to open on the server.
          * @param String $a_username The username to authenticate to the mail server with.
          * @param String $a_password The password to authenticate to the mail server with.
+         * @param Boolean $a_keepAlive If the stream should automatically reconnect and ping the server to login.
          * 
          * @throws InvalidArgumentException When invalid arguments are passed to the constructor.
          */
-        public function __construct($a_hostName, $a_port, $a_type, $a_mailbox, $a_username, $a_password)
+        public function __construct($a_hostName, $a_port, $a_type, $a_mailbox, $a_username, $a_password, $a_keepAlive = true)
         {
             $possibleTypes = array("imap", "imaps", "pop3", "pop3s");
 
             //verify argument data types
             if (!(is_string($a_hostName) && is_int($a_port) && is_string($a_type) && is_string($a_username)
-                && is_string($a_mailbox) && is_string($a_password)))
+                && is_string($a_mailbox) && is_string($a_password) && is_bool($a_keepAlive)))
             {
                 throw new InvalidArgumentException("One or more arguments are of an invalid data type.");
             }
 
-            $a_type = strtolower($a_type);
+            $this->m_type = strtolower($a_type);
 
             //verify argument contents
             if ($a_hostName == "" || $a_port < 1 || !in_array($a_type, $possibleTypes) || $a_username == "" || $a_mailbox == "")
@@ -49,7 +52,16 @@
                 throw new InvalidArgumentException("One or more arguments have invalid contents.");
             }
 
+            $this->m_keepAlive = $a_keepAlive;
 
+            //connect to the server
+            $this->m_isClosed = true;
+            if (!$this->connect())
+            {
+                return;
+            }
+
+            $this->m_isClosed = false;
         }
 
         /**
@@ -73,10 +85,36 @@
          * Establishes a connection to the mail server.
          * 
          * @return Boolean If the connection was successfully established.
+         * @throws Exception If the protocol type is invalid.
          */
         public function connect()
         {
+            //determine the protocol suffix
+            switch ($this->m_type)
+            {
+                case "imap":
+                case "pop3":
+                    $protocol = $this->m_type;
+                    break;
 
+                case "imaps":
+                    $protocol = "imap/ssl";
+                    break;
+                case "pop3s":
+                    $protocol = "pop3/ssl";
+                    break;
+
+                default:
+                    throw new Exception("Invalid Protocol Type");
+                    return false;
+            }
+
+            $connectionString = "{" . $this->m_hostname . ":" . $this->m_port . "/" . $protocol . "}" . $this->m_mailbox;
+
+            //try connecting with 2 retries
+            $this->m_underlyingStream = imap_open($connectionString, $this->m_username, $this->m_password, 0, 2);
+
+            return !is_bool($this->m_underlyingStream);
         }
 
         /**
@@ -86,7 +124,12 @@
          */
         public function close()
         {
+            if ($this->m_isClosed)
+            {
+                return true;
+            }
 
+            return imap_close($this->m_underlyingStream);
         }
 
         /**
@@ -96,7 +139,12 @@
          */
         public function isConnected()
         {
+            if ($this->m_isClosed)
+            {
+                return false;
+            }
 
+            return imap_ping($this->m_underlyingStream);
         }
 
         /**
