@@ -19,7 +19,9 @@
         public function __construct()
         {
             //load mod src files
-            require_once("src/email.php");
+            require_once("src/MailEmail.php");
+            require_once("src/MailAttachment.php");
+            require_once("src/MailStream.php");
 
             //get preset stream configs
             $this->m_streamConfigs = array();
@@ -40,6 +42,7 @@
                     $port = (isset($config['port']) ? intval($config['port']) : -1);
                     $username = (isset($config['username']) ? $config['username'] : "");
                     $password = (isset($config['password']) ? $config['password'] : "");
+                    $mailbox = (isset($config['mailbox']) ? $config['mailbox'] : "INBOX");
                     
                     //if config parameters invalid, skip
                     if ($hostname == "" || $username == "")
@@ -70,7 +73,8 @@
                         "type" => $type,
                         "port" => $port,
                         "username" => $username,
-                        "password" => $password
+                        "password" => $password,
+                        "mailbox" => $mailbox
                     );
                 }
             }
@@ -103,7 +107,7 @@
             $streamConfig = $this->m_streamConfigs[$a_streamName];
 
             try {
-                $stream = new MailStream($streamConfig['hostname'], $streamConfig['port'], $streamConfig['type'], $streamConfig['username'], $streamConfig['password']);
+                $stream = new MailStream($streamConfig['hostname'], $streamConfig['port'], $streamConfig['type'], $streamConfig['mailbox'], $streamConfig['username'], $streamConfig['password']);
 
                 if ($stream->connect())
                 {
