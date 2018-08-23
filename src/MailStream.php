@@ -53,6 +53,11 @@
             }
 
             $this->m_keepAlive = $a_keepAlive;
+            $this->m_hostname = $a_hostName;
+            $this->m_port = $a_port;
+            $this->m_mailbox = $a_mailbox;
+            $this->m_username = $a_username;
+            $this->m_password = $a_password;
 
             //connect to the server
             $this->m_isClosed = true;
@@ -235,6 +240,7 @@
 
                 array_push($mailObjects, $mailObject);
             }
+            return $mailObjects;
         }
 
         /**
@@ -309,7 +315,9 @@
                     }
                     $body .=  $addToBody;
                 }
+                $a_mailEmail->setBody($body);
             }
+            return true;
         }
 
         /**
