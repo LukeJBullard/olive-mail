@@ -261,6 +261,7 @@
             if (empty($headers))
             {
                 //message headers not found!
+                echo $a_mailEmail->getMessageNumber();
                 return false;
             }
             $headers = $headers[0];
@@ -351,14 +352,14 @@
 
             //get parameters of part
             $parameters = array();
-            if ($a_structure->parameters)
+            if (isset($a_structure->parameters))
             {
                 foreach ($a_structure->parameters as $param)
                 {
                     $parameters[strtolower($param->attribute)] = $param->value;
                 }
             }
-            if ($a_structure->dparameters)
+            if (isset($a_structure->dparameters))
             {
                 foreach ($a_structure->dparameters as $param)
                 {
@@ -405,7 +406,7 @@
             }
 
             //recurse into subparts
-            if ($a_structure->parts)
+            if (isset($a_structure->parts))
             {
                 foreach ($a_structure->parts as $partNumber => $part)
                 {

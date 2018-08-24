@@ -242,8 +242,19 @@
          */
         public function getAttachments()
         {
+            //if the message hasn't been loaded, load it
+            if (!$this->m_dataRead)
+            {
+                if (!$this->m_stream->readMessageContents($this))
+                {
+                    throw new Exception("Unable to read message contents.");
+                    return array();
+                }
+                $this->setDataRead();
+            }
+            
             //if the array is not setup, create it
-            if (!isset($this->m_attachments) || !is_array($this->m_attachments()))
+            if (!isset($this->m_attachments) || !is_array($this->m_attachments))
             {
                 $this->m_attachments = array();
             }
@@ -260,8 +271,19 @@
          */
         public function getAttachment($a_filename)
         {
+            //if the message hasn't been loaded, load it
+            if (!$this->m_dataRead)
+            {
+                if (!$this->m_stream->readMessageContents($this))
+                {
+                    throw new Exception("Unable to read message contents.");
+                    return false;
+                }
+                $this->setDataRead();
+            }
+
             //if the attachments array is not setup, create it
-            if (!isset($this->m_attachments) || !is_array($this->m_attachments()))
+            if (!isset($this->m_attachments) || !is_array($this->m_attachments))
             {
                 $this->m_attachments = array();
                 return false;
@@ -429,7 +451,7 @@
         {
             $mailObj = new MailEmail();
             $mailObj->m_stream = $a_mailStream;
-            $mailObj->m_messageNumber = $a_messageNumber;
+            $mailObj->m_msgNumber = $a_messageNumber;
 
             //if message contents should be read now, read it in
             if ($a_readNow)
