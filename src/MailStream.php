@@ -308,7 +308,7 @@
                 $body = "";
                 foreach ($structure->parts as $partNumber => $part)
                 {
-                    $addToBody = $this->getMailPart($a_mailEmail, $structure, $partNumber + 1);
+                    $addToBody = $this->getMailPart($a_mailEmail, $structure, strval(intval($partNumber) + 1));
 
                     if ($body != "" && $addToBody != "")
                     {
@@ -327,28 +327,36 @@
          * 
          * @param MailEmail $a_mailEmail The MailEmail object to retrieve the part from.
          * @param Object $a_structure A structure returned from imap_fetchstructure.
-         * @param Int $a_partNumber The index of the email part to process. Defaults to 0, single part emails should omit this parameter.
+         * @param String $a_partNumber The index of the email part to process. Defaults to 0, single part emails should omit this parameter.
          * 
          * @return String The decoded string if the part is text.
          */
-        private function getMailPart($a_mailEmail, $a_structure, $a_partNumber = 0)
+        private function getMailPart($a_mailEmail, $a_structure, $a_partNumber = '0')
         {
             $messageNumber = $a_mailEmail->getMessageNumber();
 
-            $data = ($a_partNumber == 0) ?
+            
+            $data = ($a_partNumber == '0') ?
                 //multipart
                 imap_fetchbody($this->m_underlyingStream, $messageNumber, $a_partNumber) :
                 //simple
                 imap_body($this->m_underlyingStream, $messageNumber);
+            
+            //$data = imap_fetchbody($this->m_underlyingStream, $messageNumber, $a_partNumber);
 
             //decode data
+            //echo "part: " . $a_partNumber . PHP_EOL;
+            //echo "encoding: " . $a_structure->encoding . PHP_EOL;
+            //echo "XXXXXXXX" . PHP_EOL . $data . PHP_EOL . PHP_EOL;
             if ($a_structure->encoding == 4)
             {
                 $data = quoted_printable_decode($data);
             } elseif ($a_structure->encoding == 3)
             {
-                $data = base64_decode($data);
+                //$data = base64_decode($data);
             }
+            //echo "XXXXXXXX" . PHP_EOL . $data . PHP_EOL . PHP_EOL;
+            
 
             //get parameters of part
             $parameters = array();
@@ -410,7 +418,7 @@
             {
                 foreach ($a_structure->parts as $partNumber => $part)
                 {
-                    $subpart = $this->getMailPart($a_mailEmail, $part, $a_partNumber . "." . ($partNumber + 1));
+                    $subpart = $this->getMailPart($a_mailEmail, $part, $a_partNumber . "." . strval(intval($partNumber) + 1));
                     if (is_string($subpart) && $subpart != "")
                     {
                         //add the subpart text in
